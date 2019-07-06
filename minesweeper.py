@@ -17,17 +17,23 @@ class Cell(object):
     def __init__(self, r, c, w, h, border):
         self.row = r
         self.column = c
-        self.rect = pygame.Rect(r*w + border, c*h + border, w - 2*border, h - 2*border)
-        self.hidden = True
-        self.mine = False
-        self.flagged = False
-        self.dirty = True
+        self.bg_rect = pygame.Rect(c*h, r*w, w, h)
+        self.button_rect = pygame.Rect(c*h + border, r*w + border, w - 2*border, h - 2*border)
+        self.reset()
     def reset(self):
         self.hidden = True
         self.mine = False
         self.flagged = False
         self.dirty = True
+        self.selected = False
+    def select(self):
+        self.selected = True
+        self.dirty = True
+    def unselect(self):
+        self.selected = False
+        self.dirty = True
     def click(self, button):
+        print(f'click cell {self.row},{self.column} button {button}')
         if button == 1 and not self.flagged:
             self.hidden = False
             self.dirty = True
@@ -37,14 +43,18 @@ class Cell(object):
     def paint(self, surface):
         if self.dirty:
             self.dirty = False
-            if self.flagged:
-                surface.fill((40, 40, 40), self.rect)
-            elif self.hidden:
-                surface.fill((60, 60, 120), self.rect)
-            elif self.mine:
-                surface.fill((240, 0, 0), self.rect)
+            if self.selected:
+                surface.fill((120, 120, 120), self.bg_rect)
             else:
-                surface.fill((0, 150, 50), self.rect)
+                surface.fill((0, 0, 0), self.bg_rect)
+            if self.flagged:
+                surface.fill((80, 80, 80), self.button_rect)
+            elif self.hidden:
+                surface.fill((60, 60, 120), self.button_rect)
+            elif self.mine:
+                surface.fill((255, 0, 0), self.button_rect)
+            else:
+                surface.fill((0, 150, 50), self.button_rect)
 
 class Gameboard(Scene):
     def __init__(self, parent, screen, background, font):
@@ -53,6 +63,8 @@ class Gameboard(Scene):
         self.mines = []
         self.rows = 10
         self.columns = 10
+        self.kb_row = 0
+        self.kb_col = 0
         self.exploded = False
         self.make_grid()
     def paint(self):
@@ -61,34 +73,94 @@ class Gameboard(Scene):
         pygame.display.flip()
         if self.exploded:
             pass # TODO show a game over overlay
+    def increment_kb_row(self):
+        self.unselect_cell(self.kb_row, self.kb_col)
+        if self.kb_row == (self.rows - 1):
+            self.kb_row = 0
+        else:
+            self.kb_row = self.kb_row + 1
+        self.select_cell(self.kb_row, self.kb_col)
+    def decrement_kb_row(self):
+        c = self.unselect_cell(self.kb_row, self.kb_col)
+        if self.kb_row == 0:
+            self.kb_row = self.rows - 1
+        else:
+            self.kb_row = self.kb_row - 1
+        self.select_cell(self.kb_row, self.kb_col)
+    def increment_kb_col(self):
+        self.unselect_cell(self.kb_row, self.kb_col)
+        if self.kb_col == (self.columns - 1):
+            self.kb_col = 0
+        else:
+            self.kb_col = self.kb_col + 1
+        self.select_cell(self.kb_row, self.kb_col)
+    def decrement_kb_col(self):
+        self.unselect_cell(self.kb_row, self.kb_col)
+        if self.kb_col == 0:
+            self.kb_col = self.columns - 1
+        else:
+            self.kb_col = self.kb_col - 1
+        self.select_cell(self.kb_row, self.kb_col)
+    def click_selected_cell(self, button):
+        c = self.get_cell(self.kb_row, self.kb_col)
+        if c is not None: 
+            c.click(button)
+            if not c.hidden and c.mine:
+                self.exploded = True
     def handle_events(self):
         event = pygame.event.wait()
-        if event.type == MOUSEBUTTONUP:
-            if self.exploded:
-                return
+        if event.type == MOUSEBUTTONUP and not self.exploded:
             if len(self.mines) == 0:
                 self.deploy_mines(1)
             for c in self.cells:
-                if c.rect.collidepoint(event.pos):
-                    c.click(event.button)
-                    if not c.hidden and c.mine:
-                        self.exploded = True
-                    break
+                if c.button_rect.collidepoint(event.pos):
+                    self.unselect_cell(self.kb_row, self.kb_col)
+                    self.kb_row, self.kb_col = c.row, c.column
+                    c.select()
+                    self.click_selected_cell(event.button)
+                elif c.selected:
+                    c.unselect()
         elif event.type == KEYUP:
+            if len(self.mines) == 0:
+                self.deploy_mines(1)
             if event.key == K_q:
                 self.active = False
-            # TODO add support for arrow keys, enter, and backspace
+            elif not self.exploded:
+                if event.key == K_UP:
+                    self.decrement_kb_row()
+                elif event.key == K_DOWN:
+                    self.increment_kb_row()
+                elif event.key == K_LEFT:
+                    self.decrement_kb_col()
+                elif event.key == K_RIGHT:
+                    self.increment_kb_col()
+                elif event.key == K_RETURN:
+                    self.click_selected_cell(1)
+                elif event.key == K_BACKSPACE:
+                    self.click_selected_cell(3)
         elif event.type == QUIT:
             self.parent.active = False
             self.active = False
-    def get_cell(self, r, c):
-        return self.cells[r*self.columns + c]
+    def get_cell(self, row, column):
+        if 0 <= row < self.rows and 0 <= column < self.columns:
+            return self.cells[row*self.columns + column]
+    def select_cell(self, row, column):
+        c = self.get_cell(row, column)
+        if c is not None: 
+            c.select()
+    def unselect_cell(self, row, column):
+        c = self.get_cell(row, column)
+        if c is not None: 
+            c.unselect()
     def deploy_mines(self, mine_count):
+        # TODO randomize
         self.mines.append((2,2))
         self.get_cell(2, 2).mine = True
     def reset(self):
         self.exploded = False
         self.mines = []
+        self.kb_row = -1
+        self.kb_col = -1
         for c in self.cells:
             c.reset()
     def make_grid(self):
