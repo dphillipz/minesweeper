@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import pygame
+
 class Scene(object):
     def __init__(self, parent, screen, background, font):
         self.parent = parent
@@ -9,6 +11,8 @@ class Scene(object):
         self.active = False
     def activate(self):
         self.active = True
+        self.screen.blit(self.background, (0, 0))
+        pygame.display.flip()
         self.run()
     def run(self):
         while(self.active):
