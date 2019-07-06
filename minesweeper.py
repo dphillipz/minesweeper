@@ -14,23 +14,37 @@ WIDTH = 600
 HEIGHT = 600
 
 class Cell(object):
-    def __init__(self, r, c, w, h):
+    def __init__(self, r, c, w, h, border):
         self.row = r
         self.column = c
-        self.rect = pygame.Rect(r*w, c*h, w, h)
-        self.state = 'hidden'
+        self.rect = pygame.Rect(r*w + border, c*h + border, w - 2*border, h - 2*border)
+        self.hidden = True
         self.mine = False
-    def set_mine(self, mine):
-        self.mine = mine
-    def click(self):
-        self.state = 'crater' if self.mine else 'open'
+        self.flagged = False
+        self.dirty = True
+    def reset(self):
+        self.hidden = True
+        self.mine = False
+        self.flagged = False
+        self.dirty = True
+    def click(self, button):
+        if button == 1 and not self.flagged:
+            self.hidden = False
+            self.dirty = True
+        elif button == 3:
+            self.flagged = not self.flagged
+            self.dirty = True
     def paint(self, surface):
-        if self.state == 'open':
-            surface.fill((50, 150, 50), self.rect)
-        elif self.state == 'crater':
-            surface.fill((240, 0, 0), self.rect)
-        else:
-            surface.fill((40, 40, 40), self.rect)
+        if self.dirty:
+            self.dirty = False
+            if self.flagged:
+                surface.fill((40, 40, 40), self.rect)
+            elif self.hidden:
+                surface.fill((60, 60, 120), self.rect)
+            elif self.mine:
+                surface.fill((240, 0, 0), self.rect)
+            else:
+                surface.fill((0, 150, 50), self.rect)
 
 class Gameboard(Scene):
     def __init__(self, parent, screen, background, font):
@@ -39,24 +53,31 @@ class Gameboard(Scene):
         self.mines = []
         self.rows = 10
         self.columns = 10
+        self.exploded = False
         self.make_grid()
     def paint(self):
         for c in self.cells:
             c.paint(self.screen)
         pygame.display.flip()
+        if self.exploded:
+            pass # TODO show a game over overlay
     def handle_events(self):
         event = pygame.event.wait()
         if event.type == MOUSEBUTTONUP:
+            if self.exploded:
+                return
             if len(self.mines) == 0:
                 self.deploy_mines(1)
             for c in self.cells:
                 if c.rect.collidepoint(event.pos):
-                    c.click()
-                    # TODO deal with setting off a mine
+                    c.click(event.button)
+                    if not c.hidden and c.mine:
+                        self.exploded = True
+                    break
         elif event.type == KEYUP:
             if event.key == K_q:
                 self.active = False
-            # TODO
+            # TODO add support for arrow keys, enter, and backspace
         elif event.type == QUIT:
             self.parent.active = False
             self.active = False
@@ -64,17 +85,18 @@ class Gameboard(Scene):
         return self.cells[r*self.columns + c]
     def deploy_mines(self, mine_count):
         self.mines.append((2,2))
-        self.get_cell(2, 2).set_mine(True)
-    def reset_grid(self):
-        for (r, c) in self.mines:
-            self.get_cell(r, c).set_mine(False)
+        self.get_cell(2, 2).mine = True
+    def reset(self):
+        self.exploded = False
         self.mines = []
+        for c in self.cells:
+            c.reset()
     def make_grid(self):
         cw = self.screen.get_width() / self.columns
         ch = self.screen.get_height() / self.rows
         for r in range(self.rows):
             for c in range(self.columns):
-                self.cells.append(Cell(r, c, cw, ch))
+                self.cells.append(Cell(r, c, cw, ch, 2))
 
 class MainMenu(Scene):
     def __init__(self, parent, screen, background, font):
@@ -109,11 +131,13 @@ class MainMenu(Scene):
                 self.active = False
             elif self.new_game_rect.collidepoint(event.pos):
                 self.gameboard.activate()
+                self.gameboard.reset()
         elif event.type == KEYUP:
             if event.key == K_q:
                 self.active = False
             elif event.key == K_n:
                 self.gameboard.activate()
+                self.gameboard.reset()
         elif event.type == QUIT:
             self.active = False
 
