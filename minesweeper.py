@@ -63,6 +63,8 @@ class Gameboard(Scene):
         self.kb_row = 0
         self.kb_col = 0
         self.exploded = False
+        self.disable_mines = False
+        self.debug_enabled = False
         self.make_grid()
     def paint(self):
         for c in self.cells:
@@ -102,7 +104,7 @@ class Gameboard(Scene):
         c = self.get_cell(self.kb_row, self.kb_col)
         if c is not None: 
             c.click(button)
-            if not c.hidden and c.mine:
+            if not c.hidden and c.mine and not self.disable_mines:
                 self.exploded = True
     def handle_events(self):
         event = pygame.event.wait()
@@ -122,6 +124,10 @@ class Gameboard(Scene):
                 self.deploy_mines()
             if event.key == K_q:
                 self.active = False
+            elif self.debug_enabled and event.key == K_m and pygame.key.get_mods() & KMOD_CTRL:
+                self.disable_mines = not self.disable_mines
+            elif self.debug_enabled and event.key == K_r and pygame.key.get_mods() & KMOD_CTRL:
+                self.reveal_mines()
             elif not self.exploded:
                 if event.key == K_UP:
                     self.decrement_kb_row()
@@ -138,6 +144,15 @@ class Gameboard(Scene):
         elif event.type == QUIT:
             self.parent.active = False
             self.active = False
+    def toggle_debug(self):
+        self.debug_enabled = not self.debug_enabled
+        if not self.debug_enabled:
+            self.disable_mines = False
+    def reveal_mines(self):
+        if self.debug_enabled:
+            for m in self.mines:
+                self.kb_row, self.kb_col = m
+                self.click_selected_cell(1)
     def get_cell(self, row, column):
         if 0 <= row < self.rows and 0 <= column < self.columns:
             return self.cells[row*self.columns + column]
@@ -212,6 +227,8 @@ class MainMenu(Scene):
             elif event.key == K_n:
                 self.gameboard.activate()
                 self.gameboard.reset()
+            elif event.key == K_d and pygame.key.get_mods() & KMOD_CTRL:
+                self.gameboard.toggle_debug()
         elif event.type == QUIT:
             self.active = False
 
