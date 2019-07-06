@@ -53,12 +53,13 @@ class Cell(object):
                 surface.fill((0, 150, 50), self.button_rect)
 
 class Gameboard(Scene):
-    def __init__(self, parent, screen, background, font, rows, columns):
+    def __init__(self, parent, screen, background, font, rows, columns, mine_count):
         super().__init__(parent, screen, background, font)
         self.cells = []
         self.mines = []
         self.rows = rows
         self.columns = columns
+        self.mine_count = mine_count
         self.kb_row = 0
         self.kb_col = 0
         self.exploded = False
@@ -107,7 +108,7 @@ class Gameboard(Scene):
         event = pygame.event.wait()
         if event.type == MOUSEBUTTONUP and not self.exploded:
             if len(self.mines) == 0:
-                self.deploy_mines(1)
+                self.deploy_mines()
             for c in self.cells:
                 if c.button_rect.collidepoint(event.pos):
                     self.unselect_cell(self.kb_row, self.kb_col)
@@ -118,7 +119,7 @@ class Gameboard(Scene):
                     c.unselect()
         elif event.type == KEYUP:
             if len(self.mines) == 0:
-                self.deploy_mines(1)
+                self.deploy_mines()
             if event.key == K_q:
                 self.active = False
             elif not self.exploded:
@@ -148,10 +149,15 @@ class Gameboard(Scene):
         c = self.get_cell(row, column)
         if c is not None: 
             c.unselect()
-    def deploy_mines(self, mine_count):
-        # TODO randomize
-        self.mines.append((2,2))
-        self.get_cell(2, 2).mine = True
+    def deploy_mines(self):
+        m = self.mine_count
+        while m > 0:
+            next_mine = random.randint(0, self.rows-1), random.randint(0, self.columns-1)
+            if next_mine not in self.mines:
+                print(f'deploy mine at {next_mine}')
+                self.mines.append(next_mine)
+                self.get_cell(next_mine[0], next_mine[1]).mine = True
+                m -= 1
     def reset(self):
         self.exploded = False
         self.mines = []
@@ -167,9 +173,9 @@ class Gameboard(Scene):
                 self.cells.append(Cell(r, c, cw, ch, 2))
 
 class MainMenu(Scene):
-    def __init__(self, parent, screen, background, font, rows, columns):
+    def __init__(self, parent, screen, background, font, rows, columns, mine_count):
         super().__init__(parent, screen, background, font)
-        self.gameboard = Gameboard(self, screen, background, font, rows, columns)
+        self.gameboard = Gameboard(self, screen, background, font, rows, columns, mine_count)
         hcenter = self.screen.get_width()/2
         vcenter = self.screen.get_height()/2
         # render the text here to cache the surfaces and make the rects available to handle_events()
@@ -244,11 +250,12 @@ def main():
     height = 600
     rows = 10
     columns = 10
+    mine_count = 20
     pygame.init()
     event_init()
     font = pygame.font.SysFont("Arial", 18)
     screen, background = window_init(width, height, "Minesweeper!")
-    main_menu = MainMenu(None, screen, background, font, rows, columns)
+    main_menu = MainMenu(None, screen, background, font, rows, columns, mine_count)
     main_menu.activate()
 
 if __name__ == '__main__':
