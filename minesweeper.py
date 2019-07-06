@@ -10,9 +10,6 @@ from pygame.locals import *
 
 from scene import *
 
-WIDTH = 600
-HEIGHT = 600
-
 class Cell(object):
     def __init__(self, r, c, w, h, border):
         self.row = r
@@ -33,7 +30,6 @@ class Cell(object):
         self.selected = False
         self.dirty = True
     def click(self, button):
-        print(f'click cell {self.row},{self.column} button {button}')
         if button == 1 and not self.flagged:
             self.hidden = False
             self.dirty = True
@@ -57,12 +53,12 @@ class Cell(object):
                 surface.fill((0, 150, 50), self.button_rect)
 
 class Gameboard(Scene):
-    def __init__(self, parent, screen, background, font):
+    def __init__(self, parent, screen, background, font, rows, columns):
         super().__init__(parent, screen, background, font)
         self.cells = []
         self.mines = []
-        self.rows = 10
-        self.columns = 10
+        self.rows = rows
+        self.columns = columns
         self.kb_row = 0
         self.kb_col = 0
         self.exploded = False
@@ -171,9 +167,9 @@ class Gameboard(Scene):
                 self.cells.append(Cell(r, c, cw, ch, 2))
 
 class MainMenu(Scene):
-    def __init__(self, parent, screen, background, font):
+    def __init__(self, parent, screen, background, font, rows, columns):
         super().__init__(parent, screen, background, font)
-        self.gameboard = Gameboard(self, screen, background, font)
+        self.gameboard = Gameboard(self, screen, background, font, rows, columns)
         hcenter = self.screen.get_width()/2
         vcenter = self.screen.get_height()/2
         # render the text here to cache the surfaces and make the rects available to handle_events()
@@ -244,11 +240,15 @@ def window_init(width, height, caption):
     return screen, background
 
 def main():
+    width = 600
+    height = 600
+    rows = 10
+    columns = 10
     pygame.init()
     event_init()
     font = pygame.font.SysFont("Arial", 18)
-    screen, background = window_init(WIDTH, HEIGHT, "Minesweeper!")
-    main_menu = MainMenu(None, screen, background, font)
+    screen, background = window_init(width, height, "Minesweeper!")
+    main_menu = MainMenu(None, screen, background, font, rows, columns)
     main_menu.activate()
 
 if __name__ == '__main__':
