@@ -39,6 +39,11 @@ class Cell(object):
         elif button == RIGHT_MOUSE and self.hidden:
             self.flagged = not self.flagged
             self.dirty = True
+    def reveal(self):
+        if self.hidden:
+            self.hidden = False
+            self.flagged = False # TODO show whether the guess was correct
+            self.dirty = True
     def paint(self, surface):
         if self.dirty:
             self.dirty = False
@@ -136,8 +141,7 @@ class Gameboard(Scene):
                 self.click_selected_cell(LEFT_MOUSE)
     def reveal_board(self):
         for c in self.cells:
-            if c.hidden:
-                c.click(LEFT_MOUSE)
+            c.reveal()
     def get_cell(self, row, column):
         if 0 <= row < self.rows and 0 <= column < self.columns:
             return self.cells[row*self.columns + column]
