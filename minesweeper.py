@@ -44,13 +44,13 @@ class Cell(object):
             else:
                 surface.fill((0, 0, 0), self.bg_rect)
             if self.flagged:
-                surface.fill((80, 80, 80), self.button_rect)
+                surface.fill((40, 40, 160), self.button_rect) # bright blue
             elif self.hidden:
-                surface.fill((60, 60, 120), self.button_rect)
+                surface.fill((40, 160, 40), self.button_rect) # grass
             elif self.mine:
-                surface.fill((255, 0, 0), self.button_rect)
+                surface.fill((200, 20, 20), self.button_rect) # red for now, someday use a crater tile
             else:
-                surface.fill((0, 150, 50), self.button_rect)
+                surface.fill((100, 80, 80), self.button_rect) # dug up soil
 
 class Gameboard(Scene):
     def __init__(self, parent, screen, background, font, rows, columns, mine_count):
