@@ -10,6 +10,9 @@ from pygame.locals import *
 
 from scene import *
 
+LEFT_MOUSE = 1
+RIGHT_MOUSE = 3
+
 class Cell(object):
     def __init__(self, r, c, w, h, border):
         self.row = r
@@ -30,10 +33,10 @@ class Cell(object):
         self.selected = False
         self.dirty = True
     def click(self, button):
-        if button == 1 and not self.flagged:
+        if button == LEFT_MOUSE and not self.flagged:
             self.hidden = False
             self.dirty = True
-        elif button == 3:
+        elif button == RIGHT_MOUSE:
             self.flagged = not self.flagged
             self.dirty = True
     def paint(self, surface):
@@ -112,7 +115,7 @@ class Gameboard(Scene):
             self.kb_col = self.kb_col - 1
         self.select_cell(self.kb_row, self.kb_col)
     def click_selected_cell(self, button):
-        if button == 3 and len(self.mines) == 0:
+        if button == RIGHT_MOUSE and len(self.mines) == 0:
             return
         c = self.get_cell(self.kb_row, self.kb_col)
         if c is not None: 
@@ -130,11 +133,11 @@ class Gameboard(Scene):
         if self.debug_enabled:
             for m in self.mines:
                 self.kb_row, self.kb_col = m
-                self.click_selected_cell(1)
+                self.click_selected_cell(LEFT_MOUSE)
     def reveal_board(self):
         for c in self.cells:
             if c.hidden:
-                c.click(1)
+                c.click(LEFT_MOUSE)
     def get_cell(self, row, column):
         if 0 <= row < self.rows and 0 <= column < self.columns:
             return self.cells[row*self.columns + column]
@@ -183,9 +186,9 @@ class Gameboard(Scene):
                 elif event.key == K_RIGHT:
                     self.increment_kb_col()
                 elif event.key == K_RETURN:
-                    self.click_selected_cell(1)
+                    self.click_selected_cell(LEFT_MOUSE)
                 elif event.key == K_BACKSPACE:
-                    self.click_selected_cell(3)
+                    self.click_selected_cell(RIGHT_MOUSE)
         elif event.type == QUIT:
             self.parent.active = False
             self.active = False
