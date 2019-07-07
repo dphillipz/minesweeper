@@ -121,6 +121,7 @@ class Gameboard(Scene):
             c.click(button)
             if not c.hidden and c.mine and not self.disable_mines:
                 self.exploded = True
+                self.reveal_board()
     def toggle_debug(self):
         self.debug_enabled = not self.debug_enabled
         if not self.debug_enabled:
@@ -130,6 +131,10 @@ class Gameboard(Scene):
             for m in self.mines:
                 self.kb_row, self.kb_col = m
                 self.click_selected_cell(1)
+    def reveal_board(self):
+        for c in self.cells:
+            if c.hidden:
+                c.click(1)
     def get_cell(self, row, column):
         if 0 <= row < self.rows and 0 <= column < self.columns:
             return self.cells[row*self.columns + column]
