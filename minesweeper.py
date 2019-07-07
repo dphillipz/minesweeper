@@ -101,16 +101,18 @@ class Gameboard(Scene):
             self.kb_col = self.kb_col - 1
         self.select_cell(self.kb_row, self.kb_col)
     def click_selected_cell(self, button):
+        if button == 3 and len(self.mines) == 0:
+            return
         c = self.get_cell(self.kb_row, self.kb_col)
         if c is not None: 
+            if len(self.mines) == 0:
+                self.deploy_mines(c.row, c.column)
             c.click(button)
             if not c.hidden and c.mine and not self.disable_mines:
                 self.exploded = True
     def handle_events(self):
         event = pygame.event.wait()
         if event.type == MOUSEBUTTONUP and not self.exploded:
-            if len(self.mines) == 0:
-                self.deploy_mines()
             for c in self.cells:
                 if c.button_rect.collidepoint(event.pos):
                     self.unselect_cell(self.kb_row, self.kb_col)
@@ -120,14 +122,13 @@ class Gameboard(Scene):
                 elif c.selected:
                     c.unselect()
         elif event.type == KEYUP:
-            if len(self.mines) == 0:
-                self.deploy_mines()
             if event.key == K_q:
                 self.active = False
             elif self.debug_enabled and event.key == K_m and pygame.key.get_mods() & KMOD_CTRL:
                 self.disable_mines = not self.disable_mines
             elif self.debug_enabled and event.key == K_r and pygame.key.get_mods() & KMOD_CTRL:
-                self.reveal_mines()
+                if len(self.mines) > 0:
+                    self.reveal_mines()
             elif not self.exploded:
                 if event.key == K_UP:
                     self.decrement_kb_row()
@@ -164,12 +165,11 @@ class Gameboard(Scene):
         c = self.get_cell(row, column)
         if c is not None: 
             c.unselect()
-    def deploy_mines(self):
+    def deploy_mines(self, click_row, click_column):
         m = self.mine_count
         while m > 0:
             next_mine = random.randint(0, self.rows-1), random.randint(0, self.columns-1)
-            if next_mine not in self.mines:
-                print(f'deploy mine at {next_mine}')
+            if next_mine != (click_row, click_column) and next_mine not in self.mines:
                 self.mines.append(next_mine)
                 self.get_cell(next_mine[0], next_mine[1]).mine = True
                 m -= 1
