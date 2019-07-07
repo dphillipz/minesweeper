@@ -36,7 +36,7 @@ class Cell(object):
         if button == LEFT_MOUSE and not self.flagged:
             self.hidden = False
             self.dirty = True
-        elif button == RIGHT_MOUSE:
+        elif button == RIGHT_MOUSE and self.hidden:
             self.flagged = not self.flagged
             self.dirty = True
     def paint(self, surface):
