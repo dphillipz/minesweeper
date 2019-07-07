@@ -55,17 +55,28 @@ class Cell(object):
 class Gameboard(Scene):
     def __init__(self, parent, screen, background, font, rows, columns, mine_count):
         super().__init__(parent, screen, background, font)
-        self.cells = []
-        self.mines = []
         self.rows = rows
         self.columns = columns
         self.mine_count = mine_count
-        self.kb_row = 0
-        self.kb_col = 0
-        self.exploded = False
         self.disable_mines = False
         self.debug_enabled = False
+        self.cells = []
+        self.reset()
         self.make_grid()
+    def reset(self):
+        self.exploded = False
+        self.mines = []
+        self.kb_row = 0
+        self.kb_col = 0
+    def reset_cells(self):
+        for c in self.cells:
+            c.reset()
+    def make_grid(self):
+        cw = self.screen.get_width() / self.columns
+        ch = self.screen.get_height() / self.rows
+        for r in range(self.rows):
+            for c in range(self.columns):
+                self.cells.append(Cell(r, c, cw, ch, 2))
     def paint(self):
         for c in self.cells:
             c.paint(self.screen)
@@ -110,6 +121,34 @@ class Gameboard(Scene):
             c.click(button)
             if not c.hidden and c.mine and not self.disable_mines:
                 self.exploded = True
+    def toggle_debug(self):
+        self.debug_enabled = not self.debug_enabled
+        if not self.debug_enabled:
+            self.disable_mines = False
+    def reveal_mines(self):
+        if self.debug_enabled:
+            for m in self.mines:
+                self.kb_row, self.kb_col = m
+                self.click_selected_cell(1)
+    def get_cell(self, row, column):
+        if 0 <= row < self.rows and 0 <= column < self.columns:
+            return self.cells[row*self.columns + column]
+    def select_cell(self, row, column):
+        c = self.get_cell(row, column)
+        if c is not None: 
+            c.select()
+    def unselect_cell(self, row, column):
+        c = self.get_cell(row, column)
+        if c is not None: 
+            c.unselect()
+    def deploy_mines(self, click_row, click_column):
+        m = self.mine_count
+        while m > 0:
+            next_mine = random.randint(0, self.rows-1), random.randint(0, self.columns-1)
+            if next_mine != (click_row, click_column) and next_mine not in self.mines:
+                self.mines.append(next_mine)
+                self.get_cell(next_mine[0], next_mine[1]).mine = True
+                m -= 1
     def handle_events(self):
         event = pygame.event.wait()
         if event.type == MOUSEBUTTONUP and not self.exploded:
@@ -145,47 +184,6 @@ class Gameboard(Scene):
         elif event.type == QUIT:
             self.parent.active = False
             self.active = False
-    def toggle_debug(self):
-        self.debug_enabled = not self.debug_enabled
-        if not self.debug_enabled:
-            self.disable_mines = False
-    def reveal_mines(self):
-        if self.debug_enabled:
-            for m in self.mines:
-                self.kb_row, self.kb_col = m
-                self.click_selected_cell(1)
-    def get_cell(self, row, column):
-        if 0 <= row < self.rows and 0 <= column < self.columns:
-            return self.cells[row*self.columns + column]
-    def select_cell(self, row, column):
-        c = self.get_cell(row, column)
-        if c is not None: 
-            c.select()
-    def unselect_cell(self, row, column):
-        c = self.get_cell(row, column)
-        if c is not None: 
-            c.unselect()
-    def deploy_mines(self, click_row, click_column):
-        m = self.mine_count
-        while m > 0:
-            next_mine = random.randint(0, self.rows-1), random.randint(0, self.columns-1)
-            if next_mine != (click_row, click_column) and next_mine not in self.mines:
-                self.mines.append(next_mine)
-                self.get_cell(next_mine[0], next_mine[1]).mine = True
-                m -= 1
-    def reset(self):
-        self.exploded = False
-        self.mines = []
-        self.kb_row = -1
-        self.kb_col = -1
-        for c in self.cells:
-            c.reset()
-    def make_grid(self):
-        cw = self.screen.get_width() / self.columns
-        ch = self.screen.get_height() / self.rows
-        for r in range(self.rows):
-            for c in range(self.columns):
-                self.cells.append(Cell(r, c, cw, ch, 2))
 
 class MainMenu(Scene):
     def __init__(self, parent, screen, background, font, rows, columns, mine_count):
@@ -221,12 +219,14 @@ class MainMenu(Scene):
             elif self.new_game_rect.collidepoint(event.pos):
                 self.gameboard.activate()
                 self.gameboard.reset()
+                self.gameboard.reset_cells()
         elif event.type == KEYUP:
             if event.key == K_q:
                 self.active = False
             elif event.key == K_n:
                 self.gameboard.activate()
                 self.gameboard.reset()
+                self.gameboard.reset_cells()
             elif event.key == K_d and pygame.key.get_mods() & KMOD_CTRL:
                 self.gameboard.toggle_debug()
         elif event.type == QUIT:
