@@ -14,18 +14,34 @@ LEFT_MOUSE = 1
 RIGHT_MOUSE = 3
 
 class Cell(object):
-    def __init__(self, r, c, w, h, border):
+    def __init__(self, r, c, w, h, border, font):
         self.row = r
         self.column = c
+        self.font = font
         self.bg_rect = pygame.Rect(c*h, r*w, w, h)
         self.button_rect = pygame.Rect(c*h + border, r*w + border, w - 2*border, h - 2*border)
+        self.neighbors = []
         self.reset()
+    def __eq__(self, other):
+        return self.row == other.row and self.column == other.column
     def reset(self):
         self.hidden = True
         self.mine = False
         self.flagged = False
         self.dirty = True
         self.selected = False
+        self.mine_count = 0
+    def add_neighbor(self, neighbor):
+        if neighbor not in self.neighbors:
+            self.neighbors.append(neighbor)
+    def count_mines(self):
+        for n in self.neighbors:
+            if n.mine:
+                self.mine_count += 1
+        mtw, mth = self.font.size(str(self.mine_count))
+        mtx = self.bg_rect.width/2 - mtw/2
+        mty = self.bg_rect.height/2 - mth/2
+        self.mine_text_rect = pygame.Rect(self.bg_rect.x + mtx, self.bg_rect.y + mty, mtw, mth)
     def select(self):
         self.selected = True
         self.dirty = True
@@ -47,18 +63,19 @@ class Cell(object):
     def paint(self, surface):
         if self.dirty:
             self.dirty = False
-            if self.selected:
-                surface.fill((120, 120, 120), self.bg_rect)
-            else:
-                surface.fill((0, 0, 0), self.bg_rect)
+            bg_colour = (120, 120, 120) if self.selected else (0, 0, 0)
+            button_colour = (100, 80, 80) # dug up soil
             if self.flagged:
-                surface.fill((40, 40, 160), self.button_rect) # bright blue
+                button_colour = (40, 40, 160) # bright blue
             elif self.hidden:
-                surface.fill((40, 160, 40), self.button_rect) # grass
+                button_colour = (40, 160, 40) # grass
             elif self.mine:
-                surface.fill((200, 20, 20), self.button_rect) # red for now, someday use a crater tile
-            else:
-                surface.fill((100, 80, 80), self.button_rect) # dug up soil
+                button_colour = (200, 20, 20) # red for now, someday use a crater tile
+            surface.fill(bg_colour, self.bg_rect)
+            surface.fill(button_colour, self.button_rect)
+            if not self.mine and self.mine_count > 0:
+                mine_text = self.font.render(str(self.mine_count), True, (240, 240, 240), button_colour)
+                surface.blit(mine_text, self.mine_text_rect)
 
 class Gameboard(Scene):
     def __init__(self, parent, screen, background, font, rows, columns, mine_count):
@@ -84,7 +101,15 @@ class Gameboard(Scene):
         ch = self.screen.get_height() / self.rows
         for r in range(self.rows):
             for c in range(self.columns):
-                self.cells.append(Cell(r, c, cw, ch, 2))
+                self.cells.append(Cell(r, c, cw, ch, 2, self.font))
+        for r in range(self.rows):
+            for c in range(self.columns):
+                for dr in (-1, 0, 1):
+                    for dc in (-1, 0, 1):
+                        if dr != 0 or dc != 0:
+                            n = self.get_cell(r+dr, c+dc)
+                            if n is not None:
+                                self.get_cell(r, c).add_neighbor(n)
     def paint(self):
         for c in self.cells:
             c.paint(self.screen)
@@ -161,6 +186,8 @@ class Gameboard(Scene):
                 self.mines.append(next_mine)
                 self.get_cell(next_mine[0], next_mine[1]).mine = True
                 m -= 1
+        for c in self.cells:
+            c.count_mines()
     def handle_events(self):
         event = pygame.event.wait()
         if event.type == MOUSEBUTTONUP and not self.exploded:
