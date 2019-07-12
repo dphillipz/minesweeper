@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-import pygame
+import itertools
 import os
+import pygame
 import random
 import sys
 import time
@@ -32,7 +33,7 @@ class Cell(object):
         self.selected = False
         self.mine_count = 0
     def add_neighbor(self, neighbor):
-        if neighbor not in self.neighbors:
+        if neighbor is not None and neighbor != self and neighbor not in self.neighbors:
             self.neighbors.append(neighbor)
     def count_mines(self):
         for n in self.neighbors:
@@ -99,17 +100,11 @@ class Gameboard(Scene):
     def make_grid(self):
         cw = self.screen.get_width() / self.columns
         ch = self.screen.get_height() / self.rows
-        for r in range(self.rows):
-            for c in range(self.columns):
-                self.cells.append(Cell(r, c, cw, ch, 2, self.font))
-        for r in range(self.rows):
-            for c in range(self.columns):
-                for dr in (-1, 0, 1):
-                    for dc in (-1, 0, 1):
-                        if dr != 0 or dc != 0:
-                            n = self.get_cell(r+dr, c+dc)
-                            if n is not None:
-                                self.get_cell(r, c).add_neighbor(n)
+        for (r,c) in itertools.product(range(self.rows), range(self.columns)):
+            self.cells.append(Cell(r, c, cw, ch, 2, self.font))
+        for (r,c) in itertools.product(range(self.rows), range(self.columns)):
+            for (dr, dc) in itertools.product((-1, 0, 1), (-1, 0, 1)):
+                self.get_cell(r, c).add_neighbor(self.get_cell(r+dr, c+dc))
     def paint(self):
         for c in self.cells:
             c.paint(self.screen)
