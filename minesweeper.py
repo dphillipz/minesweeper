@@ -61,6 +61,9 @@ class Cell(object):
             self.hidden = False
             self.flagged = False # TODO show whether the guess was correct
             self.dirty = True
+            if self.mine_count == 0:
+                for n in self.neighbors:
+                    n.reveal()
     def paint(self, surface):
         if self.dirty:
             self.dirty = False
@@ -183,6 +186,10 @@ class Gameboard(Scene):
                 m -= 1
         for c in self.cells:
             c.count_mines()
+        for (dr, dc) in itertools.product((-1, 0, 1), (-1, 0, 1)):
+            c = self.get_cell(click_row+dr, click_column+dc)
+            if c is not None and not c.mine:
+                c.reveal()
     def handle_events(self):
         event = pygame.event.wait()
         if event.type == MOUSEBUTTONUP and not self.exploded:
