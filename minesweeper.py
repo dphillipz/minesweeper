@@ -203,15 +203,15 @@ class Gameboard(Scene):
                 if len(self.mines) > 0:
                     self.reveal_mines()
             elif not self.exploded:
-                if event.key == K_UP:
+                if event.key in (K_UP, K_w):
                     self.decrement_kb_row()
-                elif event.key == K_DOWN:
+                elif event.key in (K_DOWN, K_s):
                     self.increment_kb_row()
-                elif event.key == K_LEFT:
+                elif event.key in (K_LEFT, K_a):
                     self.decrement_kb_col()
-                elif event.key == K_RIGHT:
+                elif event.key in (K_RIGHT, K_d):
                     self.increment_kb_col()
-                elif event.key == K_RETURN:
+                elif event.key in (K_RETURN, K_SPACE):
                     self.click_selected_cell(LEFT_MOUSE)
                 elif event.key == K_BACKSPACE:
                     self.click_selected_cell(RIGHT_MOUSE)
