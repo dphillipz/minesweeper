@@ -220,7 +220,7 @@ class Gameboard(Scene):
                     self.increment_kb_col()
                 elif event.key in (K_RETURN, K_SPACE):
                     self.click_selected_cell(LEFT_MOUSE)
-                elif event.key == K_BACKSPACE:
+                elif event.key in (K_BACKSPACE, K_r):
                     self.click_selected_cell(RIGHT_MOUSE)
         elif event.type == QUIT:
             self.parent.active = False
@@ -285,14 +285,6 @@ def load_image(name, colorkey=None):
         image.set_colorkey(colorkey, RLEACCEL)
     return image, image.get_rect()
 
-def event_init():
-    pygame.event.set_allowed(None)
-    pygame.event.set_allowed(MOUSEBUTTONUP)
-    pygame.event.set_allowed(MOUSEBUTTONDOWN)
-    pygame.event.set_allowed(KEYUP)
-    pygame.event.set_allowed(KEYDOWN)
-    pygame.event.set_allowed(QUIT)
-
 def window_init(width, height, caption):
     pygame.display.set_mode((width, height))
     pygame.display.set_caption(caption)
@@ -310,7 +302,6 @@ def main():
     columns = 10
     mine_count = 20
     pygame.init()
-    event_init()
     font = pygame.font.SysFont("Arial", 18)
     screen, background = window_init(width, height, "Minesweeper!")
     main_menu = MainMenu(None, screen, background, font, rows, columns, mine_count)
