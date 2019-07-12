@@ -74,7 +74,7 @@ class Cell(object):
                 button_colour = (200, 20, 20) # red for now, someday use a crater tile
             surface.fill(bg_colour, self.bg_rect)
             surface.fill(button_colour, self.button_rect)
-            if not self.mine and self.mine_count > 0:
+            if not self.hidden and not self.mine and self.mine_count > 0:
                 mine_text = self.font.render(str(self.mine_count), True, (240, 240, 240), button_colour)
                 surface.blit(mine_text, self.mine_text_rect)
 
