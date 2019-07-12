@@ -61,7 +61,7 @@ class Cell(object):
             self.hidden = False
             self.flagged = False # TODO show whether the guess was correct
             self.dirty = True
-            if self.mine_count == 0:
+            if self.mine_count == 0: # TODO figure out why this only works on opening move
                 for n in self.neighbors:
                     n.reveal()
     def paint(self, surface):
@@ -153,6 +153,7 @@ class Gameboard(Scene):
             if not c.hidden and c.mine and not self.disable_mines:
                 self.exploded = True
                 self.reveal_board()
+            # TODO check if the player has won: len(self.mines) == # hidden cells
     def toggle_debug(self):
         self.debug_enabled = not self.debug_enabled
         if not self.debug_enabled:
@@ -190,38 +191,42 @@ class Gameboard(Scene):
             c = self.get_cell(click_row+dr, click_column+dc)
             if c is not None and not c.mine:
                 c.reveal()
+    def handle_key(self, key):
+        if key == K_q:
+            self.active = False
+        elif self.debug_enabled and key == K_m and pygame.key.get_mods() & KMOD_CTRL:
+            self.disable_mines = not self.disable_mines
+        elif self.debug_enabled and key == K_r and pygame.key.get_mods() & KMOD_CTRL:
+            if len(self.mines) > 0:
+                self.reveal_mines()
+        elif not self.exploded:
+            if key in (K_UP, K_w):
+                self.decrement_kb_row()
+            elif key in (K_DOWN, K_s):
+                self.increment_kb_row()
+            elif key in (K_LEFT, K_a):
+                self.decrement_kb_col()
+            elif key in (K_RIGHT, K_d):
+                self.increment_kb_col()
+            elif key in (K_RETURN, K_SPACE):
+                self.click_selected_cell(LEFT_MOUSE)
+            elif key in (K_BACKSPACE, K_r):
+                self.click_selected_cell(RIGHT_MOUSE)
+    def handle_mouse_button(self, button, pos):
+        for c in self.cells:
+            if c.button_rect.collidepoint(event.pos):
+                self.unselect_cell(self.kb_row, self.kb_col)
+                self.kb_row, self.kb_col = c.row, c.column
+                c.select()
+                self.click_selected_cell(event.button)
+            elif c.selected:
+                c.unselect()
     def handle_events(self):
         event = pygame.event.wait()
         if event.type == MOUSEBUTTONUP and not self.exploded:
-            for c in self.cells:
-                if c.button_rect.collidepoint(event.pos):
-                    self.unselect_cell(self.kb_row, self.kb_col)
-                    self.kb_row, self.kb_col = c.row, c.column
-                    c.select()
-                    self.click_selected_cell(event.button)
-                elif c.selected:
-                    c.unselect()
+            self.handle_mouse_button(event.button, event.pos)
         elif event.type == KEYUP:
-            if event.key == K_q:
-                self.active = False
-            elif self.debug_enabled and event.key == K_m and pygame.key.get_mods() & KMOD_CTRL:
-                self.disable_mines = not self.disable_mines
-            elif self.debug_enabled and event.key == K_r and pygame.key.get_mods() & KMOD_CTRL:
-                if len(self.mines) > 0:
-                    self.reveal_mines()
-            elif not self.exploded:
-                if event.key in (K_UP, K_w):
-                    self.decrement_kb_row()
-                elif event.key in (K_DOWN, K_s):
-                    self.increment_kb_row()
-                elif event.key in (K_LEFT, K_a):
-                    self.decrement_kb_col()
-                elif event.key in (K_RIGHT, K_d):
-                    self.increment_kb_col()
-                elif event.key in (K_RETURN, K_SPACE):
-                    self.click_selected_cell(LEFT_MOUSE)
-                elif event.key in (K_BACKSPACE, K_r):
-                    self.click_selected_cell(RIGHT_MOUSE)
+            self.handle_key(event.key)
         elif event.type == QUIT:
             self.parent.active = False
             self.active = False
