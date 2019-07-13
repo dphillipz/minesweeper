@@ -10,45 +10,26 @@ import time
 from pygame.locals import *
 
 from scene import *
+from gameboard import *
 
 LEFT_MOUSE = 1
 RIGHT_MOUSE = 3
 
-class Cell(object):
+class MineCell(Cell):
     def __init__(self, r, c, w, h, border, font):
-        self.row = r
-        self.column = c
-        self.font = font
-        self.bg_rect = pygame.Rect(c*h, r*w, w, h)
-        self.button_rect = pygame.Rect(c*h + border, r*w + border, w - 2*border, h - 2*border)
-        self.neighbors = []
-        self.reset()
-    def __eq__(self, other):
-        return self.row == other.row and self.column == other.column
+        super().__init__(r, c, w, h, border, font)
     def reset(self):
+        super().reset()
         self.hidden = True
         self.mine = False
         self.flagged = False
-        self.dirty = True
-        self.selected = False
         self.mine_count = 0
-    def add_neighbor(self, neighbor):
-        if neighbor is not None and neighbor != self and neighbor not in self.neighbors:
-            self.neighbors.append(neighbor)
     def count_mines(self):
-        for n in self.neighbors:
-            if n.mine:
-                self.mine_count += 1
+        self.mine_count = len([n for n in self.neighbors if n.mine])
         mtw, mth = self.font.size(str(self.mine_count))
         mtx = self.bg_rect.width/2 - mtw/2
         mty = self.bg_rect.height/2 - mth/2
         self.mine_text_rect = pygame.Rect(self.bg_rect.x + mtx, self.bg_rect.y + mty, mtw, mth)
-    def select(self):
-        self.selected = True
-        self.dirty = True
-    def unselect(self):
-        self.selected = False
-        self.dirty = True
     def click(self, button):
         if button == LEFT_MOUSE and not self.flagged:
             self.hidden = False
@@ -81,67 +62,21 @@ class Cell(object):
                 mine_text = self.font.render(str(self.mine_count), True, (240, 240, 240), button_colour)
                 surface.blit(mine_text, self.mine_text_rect)
 
-class Gameboard(Scene):
+class Minefield(Gameboard):
     def __init__(self, parent, screen, background, font, rows, columns, mine_count):
-        super().__init__(parent, screen, background, font)
-        self.rows = rows
-        self.columns = columns
+        super().__init__(parent, screen, background, font, rows, columns)
         self.mine_count = mine_count
-        self.disable_mines = False
-        self.debug_enabled = False
         self.cells = []
         self.reset()
         self.make_grid()
     def reset(self):
         self.exploded = False
         self.mines = []
-        self.kb_row = 0
-        self.kb_col = 0
-    def reset_cells(self):
-        for c in self.cells:
-            c.reset()
-    def make_grid(self):
-        cw = self.screen.get_width() / self.columns
-        ch = self.screen.get_height() / self.rows
-        for (r,c) in itertools.product(range(self.rows), range(self.columns)):
-            self.cells.append(Cell(r, c, cw, ch, 2, self.font))
-        for (r,c) in itertools.product(range(self.rows), range(self.columns)):
-            for (dr, dc) in itertools.product((-1, 0, 1), (-1, 0, 1)):
-                self.get_cell(r, c).add_neighbor(self.get_cell(r+dr, c+dc))
+    def create_cell(self, row, column, width, height, border, font):
+        return MineCell(row, column, width, height, border, font)
     def paint(self):
-        for c in self.cells:
-            c.paint(self.screen)
-        pygame.display.flip()
-        if self.exploded:
-            pass # TODO show a game over overlay
-    def increment_kb_row(self):
-        self.unselect_cell(self.kb_row, self.kb_col)
-        if self.kb_row == (self.rows - 1):
-            self.kb_row = 0
-        else:
-            self.kb_row = self.kb_row + 1
-        self.select_cell(self.kb_row, self.kb_col)
-    def decrement_kb_row(self):
-        c = self.unselect_cell(self.kb_row, self.kb_col)
-        if self.kb_row == 0:
-            self.kb_row = self.rows - 1
-        else:
-            self.kb_row = self.kb_row - 1
-        self.select_cell(self.kb_row, self.kb_col)
-    def increment_kb_col(self):
-        self.unselect_cell(self.kb_row, self.kb_col)
-        if self.kb_col == (self.columns - 1):
-            self.kb_col = 0
-        else:
-            self.kb_col = self.kb_col + 1
-        self.select_cell(self.kb_row, self.kb_col)
-    def decrement_kb_col(self):
-        self.unselect_cell(self.kb_row, self.kb_col)
-        if self.kb_col == 0:
-            self.kb_col = self.columns - 1
-        else:
-            self.kb_col = self.kb_col - 1
-        self.select_cell(self.kb_row, self.kb_col)
+        super().paint()
+        # TODO show a game over overlay if exploded, else defer to parent paint
     def click_selected_cell(self, button):
         if button == RIGHT_MOUSE and len(self.mines) == 0:
             return
@@ -150,33 +85,13 @@ class Gameboard(Scene):
             if len(self.mines) == 0:
                 self.deploy_mines(c.row, c.column)
             c.click(button)
-            if not c.hidden and c.mine and not self.disable_mines:
+            if not c.hidden and c.mine:
                 self.exploded = True
                 self.reveal_board()
             # TODO check if the player has won: len(self.mines) == # hidden cells
-    def toggle_debug(self):
-        self.debug_enabled = not self.debug_enabled
-        if not self.debug_enabled:
-            self.disable_mines = False
-    def reveal_mines(self):
-        if self.debug_enabled:
-            for m in self.mines:
-                self.kb_row, self.kb_col = m
-                self.click_selected_cell(LEFT_MOUSE)
     def reveal_board(self):
         for c in self.cells:
             c.reveal()
-    def get_cell(self, row, column):
-        if 0 <= row < self.rows and 0 <= column < self.columns:
-            return self.cells[row*self.columns + column]
-    def select_cell(self, row, column):
-        c = self.get_cell(row, column)
-        if c is not None: 
-            c.select()
-    def unselect_cell(self, row, column):
-        c = self.get_cell(row, column)
-        if c is not None: 
-            c.unselect()
     def deploy_mines(self, click_row, click_column):
         m = self.mine_count
         while m > 0:
@@ -194,11 +109,6 @@ class Gameboard(Scene):
     def handle_key(self, key):
         if key == K_q:
             self.active = False
-        elif self.debug_enabled and key == K_m and pygame.key.get_mods() & KMOD_CTRL:
-            self.disable_mines = not self.disable_mines
-        elif self.debug_enabled and key == K_r and pygame.key.get_mods() & KMOD_CTRL:
-            if len(self.mines) > 0:
-                self.reveal_mines()
         elif not self.exploded:
             if key in (K_UP, K_w):
                 self.decrement_kb_row()
@@ -234,7 +144,7 @@ class Gameboard(Scene):
 class MainMenu(Scene):
     def __init__(self, parent, screen, background, font, rows, columns, mine_count):
         super().__init__(parent, screen, background, font)
-        self.gameboard = Gameboard(self, screen, background, font, rows, columns, mine_count)
+        self.gameboard = Minefield(self, screen, background, font, rows, columns, mine_count)
         hcenter = self.screen.get_width()/2
         vcenter = self.screen.get_height()/2
         # render the text here to cache the surfaces and make the rects available to handle_events()
