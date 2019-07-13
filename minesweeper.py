@@ -263,20 +263,20 @@ class MainMenu(Scene):
             if self.exit_rect.collidepoint(event.pos):
                 self.active = False
             elif self.new_game_rect.collidepoint(event.pos):
-                self.gameboard.activate()
-                self.gameboard.reset()
-                self.gameboard.reset_cells()
+                self.activate_gameboard()
         elif event.type == KEYUP:
             if event.key == K_q:
                 self.active = False
             elif event.key == K_n:
-                self.gameboard.activate()
-                self.gameboard.reset()
-                self.gameboard.reset_cells()
+                self.activate_gameboard()
             elif event.key == K_d and pygame.key.get_mods() & KMOD_CTRL:
                 self.gameboard.toggle_debug()
         elif event.type == QUIT:
             self.active = False
+    def activate_gameboard(self):
+        self.gameboard.activate()
+        self.gameboard.reset()
+        self.gameboard.reset_cells()
 
 def load_image(name, colorkey=None):
     try:
