@@ -66,17 +66,22 @@ class Minefield(Gameboard):
     def __init__(self, parent, screen, background, font, rows, columns, mine_count):
         super().__init__(parent, screen, background, font, rows, columns)
         self.mine_count = mine_count
-        self.cells = []
         self.reset()
-        self.make_grid()
     def reset(self):
         self.exploded = False
+        self.victory = False
         self.mines = []
     def create_cell(self, row, column, width, height, border, font):
         return MineCell(row, column, width, height, border, font)
     def paint(self):
-        super().paint()
-        # TODO show a game over overlay if exploded, else defer to parent paint
+        if self.exploded:
+            pygame.display.set_caption("Game Over!")
+            super().paint() # TODO show a game over overlay instead
+        elif self.victory:
+            pygame.display.set_caption("Victory!")
+            super().paint() # TODO show a victory overlay instead
+        else:
+            super().paint()
     def click_selected_cell(self, button):
         if button == RIGHT_MOUSE and len(self.mines) == 0:
             return
@@ -85,10 +90,13 @@ class Minefield(Gameboard):
             if len(self.mines) == 0:
                 self.deploy_mines(c.row, c.column)
             c.click(button)
-            if not c.hidden and c.mine:
-                self.exploded = True
-                self.reveal_board()
-            # TODO check if the player has won: len(self.mines) == # hidden cells
+            if not c.hidden:
+                if c.mine:
+                    self.exploded = True
+                    self.reveal_board()
+                elif self.mine_count == sum(c.hidden for c in self.cells):
+                    self.victory = True
+                    self.reveal_board()
     def reveal_board(self):
         for c in self.cells:
             c.reveal(True)
@@ -109,7 +117,7 @@ class Minefield(Gameboard):
     def handle_key(self, key):
         if key == K_q:
             self.active = False
-        elif not self.exploded:
+        elif not self.exploded and not self.victory:
             if key in (K_UP, K_w):
                 self.decrement_kb_row()
             elif key in (K_DOWN, K_s):
@@ -123,14 +131,15 @@ class Minefield(Gameboard):
             elif key in (K_BACKSPACE, K_r):
                 self.click_selected_cell(RIGHT_MOUSE)
     def handle_mouse_button(self, button, pos):
-        for c in self.cells:
-            if c.button_rect.collidepoint(pos):
-                self.unselect_cell(self.kb_row, self.kb_col)
-                self.kb_row, self.kb_col = c.row, c.column
-                c.select()
-                self.click_selected_cell(button)
-            elif c.selected:
-                c.unselect()
+        if not self.exploded and not self.victory:
+            for c in self.cells:
+                if c.button_rect.collidepoint(pos):
+                    self.unselect_cell(self.kb_row, self.kb_col)
+                    self.kb_row, self.kb_col = c.row, c.column
+                    c.select()
+                    self.click_selected_cell(button)
+                elif c.selected:
+                    c.unselect()
     def handle_events(self):
         event = pygame.event.wait()
         if event.type == MOUSEBUTTONUP and not self.exploded:
@@ -163,6 +172,7 @@ class MainMenu(Scene):
         exit_rect.top = vcenter + exit_rect.height/2
         return exit_text, exit_rect
     def paint(self):
+        pygame.display.set_caption("Minesweeper!")
         self.screen.blit(self.background, (0, 0))
         self.screen.blit(self.new_game_text, self.new_game_rect)
         self.screen.blit(self.exit_text, self.exit_rect)
