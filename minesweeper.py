@@ -213,8 +213,8 @@ def window_init(width, height, caption):
 def main():
     width = 600
     height = 600
-    rows = 10
-    columns = 10
+    rows = 15
+    columns = 15
     mine_count = 20
     pygame.init()
     font = pygame.font.SysFont("Arial", 18)
