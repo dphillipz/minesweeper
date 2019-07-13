@@ -124,11 +124,11 @@ class Minefield(Gameboard):
                 self.click_selected_cell(RIGHT_MOUSE)
     def handle_mouse_button(self, button, pos):
         for c in self.cells:
-            if c.button_rect.collidepoint(event.pos):
+            if c.button_rect.collidepoint(pos):
                 self.unselect_cell(self.kb_row, self.kb_col)
                 self.kb_row, self.kb_col = c.row, c.column
                 c.select()
-                self.click_selected_cell(event.button)
+                self.click_selected_cell(button)
             elif c.selected:
                 c.unselect()
     def handle_events(self):
