@@ -32,17 +32,17 @@ class MineCell(Cell):
         self.mine_text_rect = pygame.Rect(self.bg_rect.x + mtx, self.bg_rect.y + mty, mtw, mth)
     def click(self, button):
         if button == LEFT_MOUSE and not self.flagged:
-            self.hidden = False
-            self.dirty = True
+            self.reveal()
         elif button == RIGHT_MOUSE and self.hidden:
             self.flagged = not self.flagged
             self.dirty = True
-    def reveal(self):
+    def reveal(self, endgame=False):
         if self.hidden:
+            if endgame:
+                self.flagged = False # TODO show whether the guess was correct
             self.hidden = False
-            self.flagged = False # TODO show whether the guess was correct
             self.dirty = True
-            if self.mine_count == 0: # TODO figure out why this only works on opening move
+            if self.mine_count == 0:
                 for n in self.neighbors:
                     n.reveal()
     def paint(self, surface):
@@ -91,7 +91,7 @@ class Minefield(Gameboard):
             # TODO check if the player has won: len(self.mines) == # hidden cells
     def reveal_board(self):
         for c in self.cells:
-            c.reveal()
+            c.reveal(True)
     def deploy_mines(self, click_row, click_column):
         m = self.mine_count
         while m > 0:
