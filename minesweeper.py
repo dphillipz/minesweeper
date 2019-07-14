@@ -66,6 +66,8 @@ class Minefield(Gameboard):
     def __init__(self, parent, screen, background, font, rows, columns, mine_count):
         super().__init__(parent, screen, background, font, rows, columns)
         self.mine_count = mine_count
+        self.wins = 0
+        self.losses = 0
         self.reset()
     def reset(self):
         super().reset_selection()
@@ -83,6 +85,14 @@ class Minefield(Gameboard):
             super().paint() # TODO show a victory overlay instead
         else:
             super().paint()
+    def win(self):
+        self.victory = True
+        self.wins += 1
+        self.reveal_board()
+    def lose(self):
+        self.exploded = True
+        self.losses += 1
+        self.reveal_board()
     def click_selected_cell(self, button):
         if button == RIGHT_MOUSE and len(self.mines) == 0:
             return
@@ -93,11 +103,9 @@ class Minefield(Gameboard):
             c.click(button)
             if not c.hidden:
                 if c.mine:
-                    self.exploded = True
-                    self.reveal_board()
+                    self.lose()
                 elif self.mine_count == sum(c.hidden for c in self.cells):
-                    self.victory = True
-                    self.reveal_board()
+                    self.win()
     def reveal_board(self):
         for c in self.cells:
             c.reveal(True)
@@ -172,6 +180,9 @@ class MainMenu(Scene):
         exit_rect.left = hcenter - exit_rect.width/2
         exit_rect.top = vcenter + exit_rect.height/2
         return exit_text, exit_rect
+    def activate(self):
+        super().activate()
+        print(f'wins {self.gameboard.wins} losses {self.gameboard.losses}')
     def paint(self):
         pygame.display.set_caption("Minesweeper!")
         self.screen.blit(self.background, (0, 0))
@@ -190,8 +201,6 @@ class MainMenu(Scene):
                 self.active = False
             elif event.key == K_n:
                 self.activate_gameboard()
-            elif event.key == K_d and pygame.key.get_mods() & KMOD_CTRL:
-                self.gameboard.toggle_debug()
         elif event.type == QUIT:
             self.active = False
     def activate_gameboard(self):
