@@ -9,7 +9,6 @@ import time
 
 from pygame.locals import *
 
-from scene import *
 from common import *
 
 LEFT_MOUSE = 1
