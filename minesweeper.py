@@ -68,6 +68,7 @@ class Minefield(Gameboard):
         self.mine_count = mine_count
         self.reset()
     def reset(self):
+        super().reset_selection()
         self.exploded = False
         self.victory = False
         self.mines = []
