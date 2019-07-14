@@ -148,8 +148,7 @@ class Minefield(common.Gameboard):
                     self.click_selected_cell(button)
                 elif c.selected:
                     c.unselect()
-    def handle_events(self):
-        event = pygame.event.wait()
+    def handle_event(self, event):
         if event.type == MOUSEBUTTONUP and not self.exploded:
             self.handle_mouse_button(event.button, event.pos)
         elif event.type == KEYUP:
@@ -188,8 +187,7 @@ class MainMenu(common.Scene):
         self.screen.blit(self.new_game_text, self.new_game_rect)
         self.screen.blit(self.exit_text, self.exit_rect)
         pygame.display.flip()
-    def handle_events(self):
-        event = pygame.event.wait()
+    def handle_event(self, event):
         if event.type == MOUSEBUTTONUP:
             if self.exit_rect.collidepoint(event.pos):
                 self.active = False

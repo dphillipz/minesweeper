@@ -2,6 +2,7 @@
 
 import itertools
 import pygame
+import time
 
 def load_image(name, colorkey=None):
     try:
@@ -16,11 +17,12 @@ def load_image(name, colorkey=None):
     return image, image.get_rect()
 
 class Scene(object):
-    def __init__(self, parent, screen, background, font):
+    def __init__(self, parent, screen, background, font, sleeptime_ms=50):
         self.parent = parent
         self.screen = screen
         self.background = background
         self.font = font
+        self.sleeptime = sleeptime_ms/1000.
         self.active = False
     def activate(self):
         self.active = True
@@ -28,13 +30,19 @@ class Scene(object):
         pygame.display.flip()
         self.run()
     def run(self):
+        self.paint()
         while(self.active):
-            self.paint()
+            if self.sleeptime > 0:
+                time.sleep(self.sleeptime)
             self.handle_events()
+            self.paint()
     def paint(self):
         print('Unimplemented paint() function!')
     def handle_events(self):
-        print('Unimplemented handle_events() function!')
+        for e in pygame.event.get():
+            self.handle_event(e)
+    def handle_event(self, event):
+        print('Unimplemented handle_event() function!')
 
 class Cell(object):
     def __init__(self, r, c, w, h, border, font):
