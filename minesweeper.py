@@ -207,18 +207,6 @@ class MainMenu(Scene):
         self.gameboard.reset()
         self.gameboard.reset_cells()
 
-def load_image(name, colorkey=None):
-    try:
-        image = pygame.image.load(name).convert()
-    except pygame.error as message:
-        print(f"Cannot load image: {name}")
-        raise
-    if colorkey is not None:
-        if colorkey is -1:
-            colorkey = image.get_at((0,0))
-        image.set_colorkey(colorkey, RLEACCEL)
-    return image, image.get_rect()
-
 def window_init(width, height, caption):
     pygame.display.set_mode((width, height))
     pygame.display.set_caption(caption)

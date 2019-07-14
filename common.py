@@ -3,6 +3,18 @@
 import itertools
 import pygame
 
+def load_image(name, colorkey=None):
+    try:
+        image = pygame.image.load(name).convert()
+    except pygame.error as message:
+        print(f"Cannot load image: {name}")
+        raise
+    if colorkey is not None:
+        if colorkey is -1:
+            colorkey = image.get_at((0,0))
+        image.set_colorkey(colorkey, RLEACCEL)
+    return image, image.get_rect()
+
 class Scene(object):
     def __init__(self, parent, screen, background, font):
         self.parent = parent
