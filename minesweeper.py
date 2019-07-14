@@ -6,6 +6,7 @@ import pygame
 import random
 import sys
 import time
+import thorpy
 
 from pygame.locals import *
 
@@ -158,48 +159,39 @@ class Minefield(common.Gameboard):
             self.active = False
 
 class MainMenu(common.Scene):
-    def __init__(self, parent, screen, background, font, rows, columns, mine_count):
+    def __init__(self, parent, screen, background, font):
         super().__init__(parent, screen, background, font)
-        self.gameboard = Minefield(self, screen, background, font, rows, columns, mine_count)
-        hcenter = self.screen.get_width()/2
-        vcenter = self.screen.get_height()/2
-        # render the text here to cache the surfaces and make the rects available to handle_events()
-        self.new_game_text, self.new_game_rect = self.render_new_game_text(hcenter, vcenter)
-        self.exit_text, self.exit_rect = self.render_exit_text(hcenter, vcenter)
-    def render_new_game_text(self, hcenter, vcenter):
-        new_game_text = self.font.render('New Game', True, (240, 240, 240), (0, 0, 0))
-        new_game_rect = new_game_text.get_rect()
-        new_game_rect.left = hcenter - new_game_rect.width/2
-        new_game_rect.top = vcenter - 3*new_game_rect.height/2
-        return new_game_text, new_game_rect
-    def render_exit_text(self, hcenter, vcenter):
-        exit_text = self.font.render('Exit Game', True, (192, 192, 192), (0, 0, 0))
-        exit_rect = exit_text.get_rect()
-        exit_rect.left = hcenter - exit_rect.width/2
-        exit_rect.top = vcenter + exit_rect.height/2
-        return exit_text, exit_rect
-    def activate(self):
-        super().activate()
-        print(f'wins {self.gameboard.wins} losses {self.gameboard.losses}')
+        self.rows = 15
+        self.columns = 15
+        self.mine_count = 20
+        self.gameboard = Minefield(self, screen, background, font, self.rows, self.columns, self.mine_count)
+        self.title = thorpy.make_text('Minesweeper', font_size=20, font_color=(0, 0, 150))
+        self.title.center()
+        self.title.set_topleft((None, 10))
+        self.start_button = thorpy.make_button('New Game', func=MainMenu.activate_gameboard, params={'self': self})
+        self.quit_button = thorpy.make_button('Quit', func=MainMenu.quit, params={'self': self})
+        self.box = thorpy.Box(elements=[self.title, self.start_button, self.quit_button], size=(screen.get_width(), screen.get_height()))
+        thorpy.store(self.box)
+        self.menu = thorpy.Menu(self.box)
+        for element in self.menu.get_population():
+            element.surface = self.screen
+    def handle_event(self, event):
+        if event.type == KEYUP:
+            if event.key == K_q:
+                self.quit()
+            elif event.key == K_n:
+                self.activate_gameboard()
+        elif event.type != KEYDOWN:
+            self.menu.react(event)
     def paint(self):
         pygame.display.set_caption("Minesweeper!")
         self.screen.blit(self.background, (0, 0))
-        self.screen.blit(self.new_game_text, self.new_game_rect)
-        self.screen.blit(self.exit_text, self.exit_rect)
         pygame.display.flip()
-    def handle_event(self, event):
-        if event.type == MOUSEBUTTONUP:
-            if self.exit_rect.collidepoint(event.pos):
-                self.active = False
-            elif self.new_game_rect.collidepoint(event.pos):
-                self.activate_gameboard()
-        elif event.type == KEYUP:
-            if event.key == K_q:
-                self.active = False
-            elif event.key == K_n:
-                self.activate_gameboard()
-        elif event.type == QUIT:
-            self.active = False
+        self.box.blit()
+        self.box.update()
+    def quit(self):
+        self.active = False
+        print(f'wins {self.gameboard.wins} losses {self.gameboard.losses}')
     def activate_gameboard(self):
         self.gameboard.activate()
         self.gameboard.reset()
@@ -216,15 +208,16 @@ def window_init(width, height, caption):
     return screen, background
 
 def main():
+    pygame.init()
     width = 600
     height = 600
-    rows = 15
-    columns = 15
-    mine_count = 20
-    pygame.init()
     font = pygame.font.SysFont("Arial", 18)
     screen, background = window_init(width, height, "Minesweeper!")
-    main_menu = MainMenu(None, screen, background, font, rows, columns, mine_count)
+    main_menu = MainMenu(None, screen, background, font)
+    print(screen)
+    print(background)
+    print(main_menu)
+    print(main_menu.screen)
     main_menu.activate()
 
 if __name__ == '__main__':
