@@ -9,12 +9,12 @@ import time
 
 from pygame.locals import *
 
-from common import *
+import common
 
 LEFT_MOUSE = 1
 RIGHT_MOUSE = 3
 
-class MineCell(Cell):
+class MineCell(common.Cell):
     def __init__(self, r, c, w, h, border, font):
         super().__init__(r, c, w, h, border, font)
     def reset(self):
@@ -61,7 +61,7 @@ class MineCell(Cell):
                 mine_text = self.font.render(str(self.mine_count), True, (240, 240, 240), button_colour)
                 surface.blit(mine_text, self.mine_text_rect)
 
-class Minefield(Gameboard):
+class Minefield(common.Gameboard):
     def __init__(self, parent, screen, background, font, rows, columns, mine_count):
         super().__init__(parent, screen, background, font, rows, columns)
         self.mine_count = mine_count
@@ -158,7 +158,7 @@ class Minefield(Gameboard):
             self.parent.active = False
             self.active = False
 
-class MainMenu(Scene):
+class MainMenu(common.Scene):
     def __init__(self, parent, screen, background, font, rows, columns, mine_count):
         super().__init__(parent, screen, background, font)
         self.gameboard = Minefield(self, screen, background, font, rows, columns, mine_count)
