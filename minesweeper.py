@@ -250,10 +250,6 @@ def main():
     font = pygame.font.SysFont("Arial", 18)
     screen, background = window_init(width, height, "Minesweeper!")
     main_menu = MainMenu(None, screen, background, font)
-    print(screen)
-    print(background)
-    print(main_menu)
-    print(main_menu.screen)
     main_menu.activate()
 
 if __name__ == '__main__':
