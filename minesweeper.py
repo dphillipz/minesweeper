@@ -166,8 +166,6 @@ class MainMenu(common.Scene):
         self.mine_count = 20
         self.gameboard = Minefield(self, screen, background, font, self.rows, self.columns, self.mine_count)
         self.title = thorpy.make_text('Minesweeper', font_size=20, font_color=(0, 0, 150))
-        self.title.center()
-        self.title.set_topleft((None, 10))
         self.start_button = thorpy.make_button('New Game', func=MainMenu.activate_gameboard, params={'self': self})
         self.quit_button = thorpy.make_button('Quit', func=MainMenu.quit, params={'self': self})
         self.box = thorpy.Box(elements=[self.title, self.start_button, self.quit_button], size=(screen.get_width(), screen.get_height()))
