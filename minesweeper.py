@@ -209,6 +209,7 @@ def window_init(width, height, caption):
 
 def main():
     pygame.init()
+    thorpy.set_theme('human')
     width = 600
     height = 600
     font = pygame.font.SysFont("Arial", 18)
