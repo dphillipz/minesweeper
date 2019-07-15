@@ -212,8 +212,6 @@ class MainMenu(common.Scene):
             self.menu.react(event)
     def paint(self):
         pygame.display.set_caption("Minesweeper!")
-        self.screen.blit(self.background, (0, 0))
-        pygame.display.flip()
         self.box.blit()
         self.box.update()
     def quit(self):
