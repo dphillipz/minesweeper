@@ -158,17 +158,44 @@ class Minefield(common.Gameboard):
             self.parent.active = False
             self.active = False
 
+class OptionMenu(common.Scene):
+    def __init__(self, parent, screen, background, font, rows, columns):
+        super().__init__(parent, screen, background, font)
+        self.quit_button = thorpy.make_button('Return', func=OptionMenu.quit, params={'self': self})
+        self.varset = thorpy.VarSet()
+        self.varset.add('rows', value=rows, text='Rows:', limits=(5,20))
+        self.varset.add('columns', value=columns, text='Columns:', limits=(5,20))
+        self.box = thorpy.ParamSetter([self.varset], elements=[self.quit_button], size=(screen.get_width(), screen.get_height()))
+        thorpy.store(self.box)
+        self.menu = thorpy.Menu(self.box)
+        for element in self.menu.get_population():
+            element.surface = self.screen
+    def handle_event(self, event):
+        if event.type == KEYUP:
+            if event.key == K_q:
+                self.quit()
+        elif event.type != KEYDOWN:
+            self.menu.react(event)
+    def paint(self):
+        self.box.blit()
+        self.box.update()
+    def quit(self):
+        self.rows = self.varset.get_value('rows')
+        self.columns = self.varset.get_value('columns')
+        self.active = False
+
 class MainMenu(common.Scene):
     def __init__(self, parent, screen, background, font):
         super().__init__(parent, screen, background, font)
         self.rows = 15
         self.columns = 15
-        self.mine_count = 20
+        self.mine_count = (self.rows*self.columns)/10
         self.gameboard = Minefield(self, screen, background, font, self.rows, self.columns, self.mine_count)
         self.title = thorpy.make_text('Minesweeper', font_size=20, font_color=(0, 0, 150))
         self.start_button = thorpy.make_button('New Game', func=MainMenu.activate_gameboard, params={'self': self})
+        self.options_button = thorpy.make_button('Options', func=MainMenu.activate_options, params={'self': self})
         self.quit_button = thorpy.make_button('Quit', func=MainMenu.quit, params={'self': self})
-        self.box = thorpy.Box(elements=[self.title, self.start_button, self.quit_button], size=(screen.get_width(), screen.get_height()))
+        self.box = thorpy.Box(elements=[self.title, self.start_button, self.options_button, self.quit_button], size=(screen.get_width(), screen.get_height()))
         thorpy.store(self.box)
         self.menu = thorpy.Menu(self.box)
         for element in self.menu.get_population():
@@ -179,6 +206,8 @@ class MainMenu(common.Scene):
                 self.quit()
             elif event.key == K_n:
                 self.activate_gameboard()
+            elif event.key == K_o:
+                self.activate_options()
         elif event.type != KEYDOWN:
             self.menu.react(event)
     def paint(self):
@@ -194,6 +223,14 @@ class MainMenu(common.Scene):
         self.gameboard.activate()
         self.gameboard.reset()
         self.gameboard.reset_cells()
+    def activate_options(self):
+        self.options = OptionMenu(self, self.screen, self.background, self.font, self.rows, self.columns)
+        self.options.activate() 
+        # TODO need to figure out why rows/columns not being passed up
+        self.rows = self.options.rows
+        self.columns = self.options.columns
+        self.mine_count = (self.rows*self.columns)/10
+        self.gameboard = Minefield(self, self.screen, self.background, self.font, self.rows, self.columns, self.mine_count)
 
 def window_init(width, height, caption):
     pygame.display.set_mode((width, height))
