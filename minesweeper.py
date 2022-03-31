@@ -97,7 +97,7 @@ class Minefield(common.Gameboard):
         if button == RIGHT_MOUSE and len(self.mines) == 0:
             return
         c = self.get_cell(self.kb_row, self.kb_col)
-        if c is not None: 
+        if c is not None:
             if len(self.mines) == 0:
                 self.deploy_mines(c.row, c.column)
             c.click(button)
@@ -223,7 +223,7 @@ class MainMenu(common.Scene):
         self.gameboard.reset_cells()
     def activate_options(self):
         self.options = OptionMenu(self, self.screen, self.background, self.font, self.rows, self.columns)
-        self.options.activate() 
+        self.options.activate()
         # TODO need to figure out why rows/columns not being passed up
         self.rows = self.options.rows
         self.columns = self.options.columns

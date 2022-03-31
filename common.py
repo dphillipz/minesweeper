@@ -11,7 +11,7 @@ def load_image(name, colorkey=None):
         print(f"Cannot load image: {name}")
         raise
     if colorkey is not None:
-        if colorkey is -1:
+        if colorkey == -1:
             colorkey = image.get_at((0,0))
         image.set_colorkey(colorkey, RLEACCEL)
     return image, image.get_rect()
@@ -109,11 +109,11 @@ class Gameboard(Scene):
             return self.cells[row*self.columns + column]
     def select_cell(self, row, column):
         c = self.get_cell(row, column)
-        if c is not None: 
+        if c is not None:
             c.select()
     def unselect_cell(self, row, column):
         c = self.get_cell(row, column)
-        if c is not None: 
+        if c is not None:
             c.unselect()
     def increment_kb_row(self):
         self.unselect_cell(self.kb_row, self.kb_col)
